@@ -29,8 +29,10 @@ class LoginForm(FlaskForm):
 
 class ProfileForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    role_title = StringField('Role / Title', validators=[Optional(), Length(max=100)])
     bio = TextAreaField('Bio', validators=[Optional(), Length(max=300)])
     github_url = StringField('GitHub URL', validators=[Optional(), Length(max=200)])
+    avatar_url = StringField('Profile Picture URL', validators=[Optional(), Length(max=300)])
     submit = SubmitField('Update Profile')
 
 

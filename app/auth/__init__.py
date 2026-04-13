@@ -58,7 +58,9 @@ def profile():
             return render_template('auth/profile.html', form=form, title='Profile')
         current_user.username = form.username.data
         current_user.bio = form.bio.data
+        current_user.role_title = form.role_title.data or 'Developer'
         current_user.github_url = form.github_url.data
+        current_user.avatar_url = form.avatar_url.data
         db.session.commit()
         flash('Profile updated!', 'success')
         return redirect(url_for('auth.profile'))

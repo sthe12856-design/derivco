@@ -4,9 +4,58 @@
 
 {% block content %}
 <div class="container py-5">
+
+  <!-- Profile Header Banner -->
+  <div class="card shadow-sm mb-4" style="border-top: 5px solid var(--mb-green);">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center gap-4 flex-wrap">
+        <!-- Avatar -->
+        <div>
+          {% if current_user.avatar_url %}
+            <img src="{{ current_user.avatar_url }}" alt="Avatar"
+                 class="rounded-circle border border-3"
+                 style="width:100px; height:100px; object-fit:cover; border-color:var(--mb-green) !important;">
+          {% else %}
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:100px; height:100px; background:var(--mb-green); font-size:2.5rem; color:#fff; font-weight:700;">
+              {{ current_user.username[0].upper() }}
+            </div>
+          {% endif %}
+        </div>
+        <!-- Info -->
+        <div>
+          <h3 class="fw-bold mb-0">{{ current_user.username }}</h3>
+          <span class="badge text-white mt-1 px-3 py-1 fs-6" style="background:var(--mb-black);">
+            <i class="bi bi-code-slash"></i>
+            {{ current_user.role_title or 'Developer' }}
+          </span>
+          {% if current_user.bio %}
+            <p class="text-muted mt-2 mb-0">{{ current_user.bio }}</p>
+          {% endif %}
+          {% if current_user.github_url %}
+            <a href="{{ current_user.github_url }}" target="_blank" class="btn btn-sm btn-mb-outline mt-2">
+              <i class="bi bi-github"></i> GitHub
+            </a>
+          {% endif %}
+        </div>
+        <!-- Stats -->
+        <div class="ms-auto text-center d-flex gap-4">
+          <div>
+            <div class="fw-bold fs-4" style="color:var(--mb-green)">{{ current_user.projects.count() }}</div>
+            <small class="text-muted">Projects</small>
+          </div>
+          <div>
+            <div class="fw-bold fs-4" style="color:var(--mb-green)">{{ current_user.projects.filter_by(is_completed=True).count() }}</div>
+            <small class="text-muted">Completed</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row g-4">
-    <!-- Profile Form -->
-    <div class="col-md-5">
+    <!-- Edit Profile Form -->
+    <div class="col-md-4">
       <div class="card shadow-sm">
         <div class="card-header card-header-mb py-3">
           <h5 class="mb-0"><i class="bi bi-person-gear"></i> Edit Profile</h5>
@@ -15,8 +64,14 @@
           <form method="POST">
             {{ form.hidden_tag() }}
             {{ render_field(form.username) }}
+            {{ render_field(form.role_title, 'e.g. Full-Stack Developer, Backend Dev…') }}
             {{ render_field(form.bio, 'Tell the community about yourself…') }}
             {{ render_field(form.github_url, 'https://github.com/yourname') }}
+            {{ render_field(form.avatar_url, 'Paste a link to your profile picture') }}
+            <small class="text-muted d-block mb-3">
+              <i class="bi bi-info-circle"></i> Tip: use a link from GitHub, LinkedIn, or
+              <a href="https://ui-avatars.com" target="_blank">ui-avatars.com</a>
+            </small>
             <div class="d-grid">
               {{ form.submit(class="btn btn-mb-primary") }}
             </div>
@@ -26,31 +81,43 @@
     </div>
 
     <!-- My Projects -->
-    <div class="col-md-7">
-      <h5 class="fw-bold mb-3"><i class="bi bi-folder2-open"></i> My Projects</h5>
-      {% set my_projects = current_user.projects.order_by('created_at desc').all() %}
+    <div class="col-md-8">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-folder2-open"></i> My Projects</h5>
+        <a href="{{ url_for('projects.new_project') }}" class="btn btn-sm btn-mb-primary">
+          <i class="bi bi-plus-circle"></i> New Project
+        </a>
+      </div>
+
+      {% set my_projects = current_user.projects.order_by('updated_at desc').all() %}
       {% if my_projects %}
         {% for project in my_projects %}
         <div class="card mb-3 feed-card">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
               <div>
-                <span class="badge badge-{{ project.stage }} text-white me-2">{{ project.stage.title() }}</span>
+                <span class="badge badge-{{ project.stage }} text-white me-1">{{ project.stage.title() }}</span>
                 {% if project.is_completed %}
-                  <span class="badge bg-warning text-dark">Completed</span>
+                  <span class="badge bg-warning text-dark"><i class="bi bi-trophy"></i> Completed</span>
                 {% endif %}
-                <h6 class="mt-2 fw-bold">
+                <h6 class="mt-2 fw-bold mb-1">
                   <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
                      class="text-decoration-none text-dark">{{ project.title }}</a>
                 </h6>
-                <small class="text-muted">{{ project.milestones.count() }} milestone(s) &bull; {{ project.comments.count() }} comment(s)</small>
+                <small class="text-muted">
+                  {{ project.milestones.count() }} milestone(s) &bull;
+                  {{ project.comments.count() }} comment(s) &bull;
+                  {{ project.updated_at.strftime('%d %b %Y') }}
+                </small>
               </div>
-              <div class="d-flex gap-2">
+              <div class="d-flex gap-2 flex-shrink-0">
                 <a href="{{ url_for('projects.edit_project', project_id=project.id) }}"
-                   class="btn btn-sm btn-mb-outline"><i class="bi bi-pencil"></i></a>
+                   class="btn btn-sm btn-mb-outline">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
                 <form action="{{ url_for('projects.delete_project', project_id=project.id) }}" method="POST"
                       onsubmit="return confirm('Delete this project?')">
-                  {{ form.hidden_tag() }}
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                 </form>
               </div>
@@ -59,9 +126,12 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="text-muted text-center py-4">
-          <p>No projects yet.</p>
-          <a href="{{ url_for('projects.new_project') }}" class="btn btn-mb-primary">Create First Project</a>
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-folder-x display-4"></i>
+          <p class="mt-3">No projects yet.</p>
+          <a href="{{ url_for('projects.new_project') }}" class="btn btn-mb-primary">
+            Create Your First Project
+          </a>
         </div>
       {% endif %}
     </div>

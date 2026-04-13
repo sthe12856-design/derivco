@@ -35,9 +35,10 @@ def project_detail(project_id):
     comment_form = CommentForm()
     hand_raise_form = HandRaiseForm()
     milestone_form = MilestoneForm()
-    milestones = project.milestones.order_by('created_at asc').all()
-    comments = project.comments.order_by('created_at asc').all()
-    hand_raises = project.hand_raises.order_by('created_at desc').all()
+    from app.models import Milestone, Comment
+    milestones = project.milestones.order_by(Milestone.created_at.asc()).all()
+    comments = project.comments.order_by(Comment.created_at.asc()).all()
+    hand_raises = project.hand_raises.order_by(HandRaise.created_at.desc()).all()
     user_raised = False
     if current_user.is_authenticated:
         user_raised = HandRaise.query.filter_by(
