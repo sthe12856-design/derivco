@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Login – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header card-header-mb py-3">
+          <h4 class="mb-0 text-center"><i class="bi bi-box-arrow-in-right"></i> Login</h4>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.email, 'your@email.com') }}
+            {{ render_field(form.password, 'Your password') }}
+            {{ render_field(form.remember_me) }}
+            <div class="d-grid mt-3">
+              {{ form.submit(class="btn btn-mb-primary btn-lg") }}
+            </div>
+          </form>
+          <p class="text-center mt-3 text-muted small">
+            Don't have an account? <a href="{{ url_for('auth.register') }}" style="color:var(--mb-green)">Register</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

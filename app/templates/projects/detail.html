@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}{{ project.title }} – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+
+    <!-- ── LEFT: Project Details ── -->
+    <div class="col-md-8">
+
+      <!-- Project Header -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <span class="badge badge-{{ project.stage }} text-white fs-6 mb-2">{{ project.stage.title() }}</span>
+              {% if project.is_completed %}
+                <span class="badge bg-warning text-dark fs-6 mb-2"><i class="bi bi-trophy"></i> Completed</span>
+              {% endif %}
+              <h3 class="fw-bold">{{ project.title }}</h3>
+              <p class="text-muted">{{ project.description }}</p>
+              {% if project.support_needed %}
+                <div class="alert alert-success py-2">
+                  <i class="bi bi-hand-thumbs-up"></i> <strong>Help needed:</strong> {{ project.support_needed }}
+                </div>
+              {% endif %}
+            </div>
+            {% if current_user.is_authenticated and current_user.id == project.user_id %}
+              <div class="d-flex gap-2 flex-shrink-0">
+                <a href="{{ url_for('projects.edit_project', project_id=project.id) }}"
+                   class="btn btn-sm btn-mb-outline"><i class="bi bi-pencil"></i> Edit</a>
+                <form action="{{ url_for('projects.delete_project', project_id=project.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this project?')">
+                  {{ comment_form.hidden_tag() }}
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+          <div class="d-flex align-items-center gap-3 mt-3 flex-wrap">
+            <small class="text-muted">
+              By <a href="{{ url_for('auth.developer', user_id=project.author.id) }}"
+                    style="color:var(--mb-green)" class="fw-bold text-decoration-none">{{ project.author.username }}</a>
+            </small>
+            <small class="text-muted">Created {{ project.created_at.strftime('%d %b %Y') }}</small>
+            <small class="text-muted">Updated {{ project.updated_at.strftime('%d %b %Y') }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header card-header-mb py-2">
+          <h6 class="mb-0"><i class="bi bi-check2-circle"></i> Milestones</h6>
+        </div>
+        <div class="card-body">
+          {% if milestones %}
+            <ul class="list-group list-group-flush mb-3">
+              {% for m in milestones %}
+              <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div>
+                  <span class="{% if m.achieved %}milestone-achieved{% else %}fw-semibold{% endif %}">
+                    {% if m.achieved %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-muted"></i>{% endif %}
+                    {{ m.title }}
+                  </span>
+                  {% if m.description %}<p class="small text-muted mb-0 ms-3">{{ m.description }}</p>{% endif %}
+                </div>
+                {% if current_user.is_authenticated and current_user.id == project.user_id %}
+                  <form action="{{ url_for('projects.toggle_milestone', milestone_id=m.id) }}" method="POST">
+                    {{ comment_form.hidden_tag() }}
+                    <button class="btn btn-sm {% if m.achieved %}btn-outline-secondary{% else %}btn-mb-primary{% endif %}">
+                      {% if m.achieved %}Undo{% else %}Done{% endif %}
+                    </button>
+                  </form>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted small">No milestones yet.</p>
+          {% endif %}
+
+          {% if current_user.is_authenticated and current_user.id == project.user_id %}
+            <hr>
+            <h6 class="fw-bold">Add Milestone</h6>
+            <form action="{{ url_for('projects.add_milestone', project_id=project.id) }}" method="POST">
+              {{ milestone_form.hidden_tag() }}
+              <div class="row g-2">
+                <div class="col-md-5">
+                  {{ milestone_form.title(class="form-control", placeholder="Milestone title") }}
+                </div>
+                <div class="col-md-5">
+                  {{ milestone_form.description(class="form-control", placeholder="Details (optional)", rows=1) }}
+                </div>
+                <div class="col-md-2">
+                  {{ milestone_form.submit(class="btn btn-mb-primary w-100") }}
+                </div>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header card-header-mb py-2">
+          <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Comments ({{ comments|length }})</h6>
+        </div>
+        <div class="card-body">
+          {% if comments %}
+            {% for c in comments %}
+            <div class="d-flex mb-3 gap-3">
+              <div style="font-size:1.8rem; color:var(--mb-green)"><i class="bi bi-person-circle"></i></div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                  <a href="{{ url_for('auth.developer', user_id=c.author.id) }}"
+                     class="fw-bold text-decoration-none" style="color:var(--mb-green)">{{ c.author.username }}</a>
+                  <small class="text-muted">{{ c.created_at.strftime('%d %b %Y %H:%M') }}</small>
+                </div>
+                <p class="mb-0 mt-1">{{ c.body }}</p>
+              </div>
+            </div>
+            {% if not loop.last %}<hr class="my-2">{% endif %}
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small">No comments yet. Start the conversation!</p>
+          {% endif %}
+
+          {% if current_user.is_authenticated %}
+            <hr>
+            <form action="{{ url_for('projects.add_comment', project_id=project.id) }}" method="POST">
+              {{ comment_form.hidden_tag() }}
+              {{ comment_form.body(class="form-control mb-2", placeholder="Write a comment…", rows=2) }}
+              {{ comment_form.submit(class="btn btn-mb-primary btn-sm") }}
+            </form>
+          {% else %}
+            <p class="small text-muted mt-3">
+              <a href="{{ url_for('auth.login') }}" style="color:var(--mb-green)">Login</a> to comment.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Raise a Hand ── -->
+    <div class="col-md-4">
+      <!-- Raise a Hand card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header card-header-mb py-2">
+          <h6 class="mb-0"><i class="bi bi-hand-index-thumb"></i> Raise a Hand</h6>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">Interested in collaborating on this project?</p>
+
+          {% if current_user.is_authenticated %}
+            {% if current_user.id == project.user_id %}
+              <!-- Project owner sees who raised hands -->
+              {% if hand_raises %}
+                <h6 class="fw-bold">Collaboration Requests ({{ hand_raises|length }})</h6>
+                {% for hr in hand_raises %}
+                  <div class="mb-2 p-2 border rounded">
+                    <a href="{{ url_for('auth.developer', user_id=hr.requester.id) }}"
+                       style="color:var(--mb-green)" class="fw-semibold text-decoration-none">{{ hr.requester.username }}</a>
+                    {% if hr.message %}
+                      <p class="small text-muted mb-0">{{ hr.message }}</p>
+                    {% endif %}
+                    <small class="text-muted">{{ hr.created_at.strftime('%d %b %Y') }}</small>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <p class="small text-muted">No collaboration requests yet.</p>
+              {% endif %}
+            {% elif user_raised %}
+              <div class="alert alert-success py-2 small">
+                <i class="bi bi-check-circle"></i> You've already raised your hand!
+              </div>
+            {% else %}
+              <form action="{{ url_for('projects.raise_hand', project_id=project.id) }}" method="POST">
+                {{ hand_raise_form.hidden_tag() }}
+                {{ hand_raise_form.message(class="form-control mb-2", placeholder="Short message (optional)", rows=2) }}
+                {{ hand_raise_form.submit(class="btn btn-mb-primary w-100") }}
+              </form>
+            {% endif %}
+          {% else %}
+            <p class="small text-muted">
+              <a href="{{ url_for('auth.login') }}" style="color:var(--mb-green)">Login</a> to raise a hand.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <div class="row">
+            <div class="col-4">
+              <div class="fw-bold fs-5" style="color:var(--mb-green)">{{ milestones|length }}</div>
+              <small class="text-muted">Milestones</small>
+            </div>
+            <div class="col-4">
+              <div class="fw-bold fs-5" style="color:var(--mb-green)">{{ comments|length }}</div>
+              <small class="text-muted">Comments</small>
+            </div>
+            <div class="col-4">
+              <div class="fw-bold fs-5" style="color:var(--mb-green)">{{ hand_raises|length }}</div>
+              <small class="text-muted">Hands Up</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

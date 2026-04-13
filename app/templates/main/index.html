@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}MzansiBuilds – Build in Public{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero text-center">
+  <div class="container">
+    <h1><span class="accent">Mzansi</span>Builds</h1>
+    <p class="lead mt-3" style="color:#ccc; max-width:600px; margin:auto;">
+      A public platform for developers to share what they're building,
+      track progress, and collaborate with the community.
+    </p>
+    <div class="mt-4 d-flex gap-3 justify-content-center flex-wrap">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('projects.new_project') }}" class="btn btn-mb-primary btn-lg">
+          <i class="bi bi-plus-circle"></i> Start a Project
+        </a>
+        <a href="{{ url_for('main.feed') }}" class="btn btn-mb-outline btn-lg" style="border-color:#fff; color:#fff;">
+          <i class="bi bi-rss"></i> View Feed
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-mb-primary btn-lg">
+          <i class="bi bi-person-plus"></i> Join MzansiBuilds
+        </a>
+        <a href="{{ url_for('main.feed') }}" class="btn btn-lg" style="border:2px solid #fff; color:#fff; background:transparent;">
+          <i class="bi bi-rss"></i> Explore Feed
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Stats bar -->
+<section class="py-4 bg-white border-bottom">
+  <div class="container">
+    <div class="row text-center g-3">
+      <div class="col-4">
+        <div class="display-6 fw-bold" style="color:var(--mb-green)">{{ total_devs }}</div>
+        <small class="text-muted">Developers</small>
+      </div>
+      <div class="col-4">
+        <div class="display-6 fw-bold" style="color:var(--mb-green)">{{ total_projects }}</div>
+        <small class="text-muted">Projects</small>
+      </div>
+      <div class="col-4">
+        <div class="display-6 fw-bold" style="color:var(--mb-green)">{{ completed }}</div>
+        <small class="text-muted">Completed</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Recent projects -->
+<section class="py-5">
+  <div class="container">
+    <h4 class="fw-bold mb-4"><i class="bi bi-fire"></i> Recently Active</h4>
+    <div class="row g-4">
+      {% for project in recent %}
+      <div class="col-md-4">
+        <div class="card h-100 feed-card">
+          <div class="card-body">
+            <span class="badge badge-{{ project.stage }} text-white mb-2">{{ project.stage.title() }}</span>
+            <h5 class="fw-bold">
+              <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                 class="text-decoration-none text-dark">{{ project.title }}</a>
+            </h5>
+            <p class="text-muted small">{{ project.description[:120] }}{% if project.description|length > 120 %}…{% endif %}</p>
+            <small class="text-muted">by
+              <a href="{{ url_for('auth.developer', user_id=project.author.id) }}" class="text-decoration-none fw-semibold" style="color:var(--mb-green)">
+                {{ project.author.username }}
+              </a>
+            </small>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center text-muted py-5">
+        No projects yet. <a href="{{ url_for('auth.register') }}">Be the first!</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% if recent %}
+    <div class="text-center mt-4">
+      <a href="{{ url_for('main.feed') }}" class="btn btn-mb-outline">View All Projects →</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

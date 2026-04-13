@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}{{ title }} – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card shadow-sm">
+        <div class="card-header card-header-mb py-3">
+          <h5 class="mb-0"><i class="bi bi-folder-plus"></i> {{ legend }}</h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.title, 'e.g. My Awesome App') }}
+            {{ render_field(form.description, 'What are you building? What problem does it solve?') }}
+            {{ render_field(form.stage) }}
+            {{ render_field(form.support_needed, 'e.g. Looking for a UI designer, need help with auth…') }}
+            <div class="d-grid mt-3">
+              {{ form.submit(class="btn btn-mb-primary btn-lg") }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

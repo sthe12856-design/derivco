@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+    <!-- Developer Info -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body py-4">
+          <div class="mb-3" style="font-size:4rem; color:var(--mb-green)">
+            <i class="bi bi-person-circle"></i>
+          </div>
+          <h4 class="fw-bold">{{ user.username }}</h4>
+          {% if user.bio %}
+            <p class="text-muted small">{{ user.bio }}</p>
+          {% endif %}
+          {% if user.github_url %}
+            <a href="{{ user.github_url }}" target="_blank" class="btn btn-sm btn-mb-outline mt-2">
+              <i class="bi bi-github"></i> GitHub
+            </a>
+          {% endif %}
+          <div class="mt-3">
+            <small class="text-muted">Member since {{ user.created_at.strftime('%b %Y') }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Developer Projects -->
+    <div class="col-md-9">
+      <h5 class="fw-bold mb-3">{{ user.username }}'s Projects ({{ projects|length }})</h5>
+      {% if projects %}
+        {% for project in projects %}
+        <div class="card mb-3 feed-card">
+          <div class="card-body">
+            <span class="badge badge-{{ project.stage }} text-white me-2">{{ project.stage.title() }}</span>
+            {% if project.is_completed %}
+              <span class="badge bg-warning text-dark"><i class="bi bi-trophy"></i> Completed</span>
+            {% endif %}
+            <h6 class="mt-2 fw-bold">
+              <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                 class="text-decoration-none text-dark">{{ project.title }}</a>
+            </h6>
+            <p class="text-muted small mb-0">{{ project.description[:150] }}{% if project.description|length > 150 %}…{% endif %}</p>
+            <small class="text-muted">{{ project.milestones.count() }} milestone(s) &bull; {{ project.updated_at.strftime('%d %b %Y') }}</small>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-muted text-center py-4">No projects shared yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

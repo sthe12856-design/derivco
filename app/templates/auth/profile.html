@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}My Profile – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+    <!-- Profile Form -->
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header card-header-mb py-3">
+          <h5 class="mb-0"><i class="bi bi-person-gear"></i> Edit Profile</h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.username) }}
+            {{ render_field(form.bio, 'Tell the community about yourself…') }}
+            {{ render_field(form.github_url, 'https://github.com/yourname') }}
+            <div class="d-grid">
+              {{ form.submit(class="btn btn-mb-primary") }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Projects -->
+    <div class="col-md-7">
+      <h5 class="fw-bold mb-3"><i class="bi bi-folder2-open"></i> My Projects</h5>
+      {% set my_projects = current_user.projects.order_by('created_at desc').all() %}
+      {% if my_projects %}
+        {% for project in my_projects %}
+        <div class="card mb-3 feed-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <span class="badge badge-{{ project.stage }} text-white me-2">{{ project.stage.title() }}</span>
+                {% if project.is_completed %}
+                  <span class="badge bg-warning text-dark">Completed</span>
+                {% endif %}
+                <h6 class="mt-2 fw-bold">
+                  <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                     class="text-decoration-none text-dark">{{ project.title }}</a>
+                </h6>
+                <small class="text-muted">{{ project.milestones.count() }} milestone(s) &bull; {{ project.comments.count() }} comment(s)</small>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('projects.edit_project', project_id=project.id) }}"
+                   class="btn btn-sm btn-mb-outline"><i class="bi bi-pencil"></i></a>
+                <form action="{{ url_for('projects.delete_project', project_id=project.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this project?')">
+                  {{ form.hidden_tag() }}
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-muted text-center py-4">
+          <p>No projects yet.</p>
+          <a href="{{ url_for('projects.new_project') }}" class="btn btn-mb-primary">Create First Project</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
