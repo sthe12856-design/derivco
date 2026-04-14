@@ -89,7 +89,7 @@
         </a>
       </div>
 
-      {% set my_projects = current_user.projects.order_by('updated_at desc').all() %}
+      {% set my_projects = current_user.projects.all() | sort(attribute='updated_at', reverse=True) %}
       {% if my_projects %}
         {% for project in my_projects %}
         <div class="card mb-3 feed-card">

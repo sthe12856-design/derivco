@@ -70,5 +70,6 @@ def profile():
 @auth.route('/developer/<int:user_id>')
 def developer(user_id):
     user = User.query.get_or_404(user_id)
-    projects = user.projects.order_by('created_at desc').all()
+    from app.models import Project
+    projects = user.projects.order_by(Project.created_at.desc()).all()
     return render_template('auth/developer.html', user=user, projects=projects, title=user.username)
