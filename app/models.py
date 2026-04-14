@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 from app import db, login_manager
 
 
@@ -20,6 +21,9 @@ class User(UserMixin, db.Model):
     role_title = db.Column(db.String(100), default='Developer')
     github_url = db.Column(db.String(200), default='')
     avatar_url = db.Column(db.String(300), default='')
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    reset_token = db.Column(db.String(100), unique=True, nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     projects = db.relationship('Project', backref='author', lazy='dynamic',
@@ -32,6 +36,17 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def generate_reset_token(self):
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+        return self.reset_token
+
+    @property
+    def is_online(self):
+        if self.last_seen:
+            return (datetime.utcnow() - self.last_seen).total_seconds() < 300  # 5 min
+        return False
 
     def __repr__(self):
         return f'<User {self.username}>'

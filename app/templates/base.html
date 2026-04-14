@@ -97,6 +97,16 @@
 
     /* ── Milestone ── */
     .milestone-achieved { text-decoration: line-through; color: #999; }
+
+    /* ── Online/Offline status dot ── */
+    .status-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--mb-black);
+    }
+    .status-dot.online  { background-color: #28a745; }
+    .status-dot.offline { background-color: #dc3545; }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -117,7 +127,7 @@
         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.celebration_wall') }}"><i class="bi bi-trophy"></i> Wall</a></li>
         {% if current_user.is_authenticated %}
           <li class="nav-item"><a class="nav-link" href="{{ url_for('projects.new_project') }}"><i class="bi bi-plus-circle"></i> New Project</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.profile') }}"><i class="bi bi-person-circle"></i> {{ current_user.username }}</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.profile') }}"><i class="bi bi-person-circle"></i> {{ current_user.username }} <span class="status-dot online" title="Online"></span></a></li>
           <li class="nav-item">
             <form action="{{ url_for('auth.logout') }}" method="get" class="d-inline">
               <button class="btn btn-sm btn-mb-outline ms-1">Logout</button>

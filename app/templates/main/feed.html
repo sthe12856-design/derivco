@@ -48,6 +48,8 @@
                    class="text-decoration-none fw-semibold" style="color:var(--mb-green)">
                   <i class="bi bi-person-circle"></i> {{ project.author.username }}
                 </a>
+                <span class="status-dot {{ 'online' if project.author.is_online else 'offline' }}"
+                      title="{{ 'Online' if project.author.is_online else 'Offline' }}"></span>
                 <span class="text-muted small ms-2">{{ project.updated_at.strftime('%d %b %Y') }}</span>
               </div>
               <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"

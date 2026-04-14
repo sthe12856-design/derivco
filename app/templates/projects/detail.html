@@ -199,9 +199,27 @@
                 <p class="small text-muted">No collaboration requests yet.</p>
               {% endif %}
             {% elif user_raised %}
-              <div class="alert alert-success py-2 small">
-                <i class="bi bi-check-circle"></i> You've already raised your hand!
-              </div>
+              {% set my_raise = None %}
+              {% for hr in hand_raises %}
+                {% if hr.user_id == current_user.id %}{% set my_raise = hr %}{% endif %}
+              {% endfor %}
+              {% if my_raise and my_raise.status == 'accepted' %}
+                <div class="alert alert-success py-2 small">
+                  <i class="bi bi-check-circle-fill"></i> <strong>Accepted!</strong> You've been accepted as a collaborator.
+                </div>
+                <a href="{{ url_for('projects.collaborate', project_id=project.id) }}"
+                   class="btn btn-mb-primary btn-sm w-100">
+                  <i class="bi bi-chat-dots"></i> Open Collaboration Panel
+                </a>
+              {% elif my_raise and my_raise.status == 'declined' %}
+                <div class="alert alert-danger py-2 small">
+                  <i class="bi bi-x-circle-fill"></i> <strong>Declined.</strong> Your collaboration request was not accepted.
+                </div>
+              {% else %}
+                <div class="alert alert-warning py-2 small">
+                  <i class="bi bi-hourglass-split"></i> <strong>Pending.</strong> Waiting for the project owner to respond.
+                </div>
+              {% endif %}
             {% else %}
               <form action="{{ url_for('projects.raise_hand', project_id=project.id) }}" method="POST">
                 {{ hand_raise_form.hidden_tag() }}

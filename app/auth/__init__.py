@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_mail import Message
 from werkzeug.utils import secure_filename
 import os, uuid
-from app import db
+from app import db, mail
 from app.models import User
-from app.forms import RegistrationForm, LoginForm, ProfileForm
+from app.forms import RegistrationForm, LoginForm, ProfileForm, ForgotPasswordForm, ResetPasswordForm
 
 auth = Blueprint('auth', __name__)
 
@@ -63,7 +64,7 @@ def profile():
         current_user.role_title = form.role_title.data or 'Developer'
         current_user.github_url = form.github_url.data
 
-        # Handle file upload
+        # Handle file upload only
         if form.avatar_upload.data:
             file = form.avatar_upload.data
             ext = file.filename.rsplit('.', 1)[-1].lower()
@@ -72,8 +73,6 @@ def profile():
             os.makedirs(upload_folder, exist_ok=True)
             file.save(os.path.join(upload_folder, secure_filename(filename)))
             current_user.avatar_url = url_for('static', filename=f'uploads/{filename}')
-        elif form.avatar_url.data:
-            current_user.avatar_url = form.avatar_url.data
 
         db.session.commit()
         flash('Profile updated!', 'success')
@@ -87,3 +86,47 @@ def developer(user_id):
     from app.models import Project
     projects = user.projects.order_by(Project.created_at.desc()).all()
     return render_template('auth/developer.html', user=user, projects=projects, title=user.username)
+
+
+@auth.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.feed'))
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = user.generate_reset_token()
+            db.session.commit()
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            try:
+                msg = Message('MzansiBuilds – Password Reset',
+                              recipients=[user.email])
+                msg.html = render_template('auth/reset_email.html',
+                                           user=user, reset_url=reset_url)
+                mail.send(msg)
+            except Exception:
+                pass  # Fail silently if SMTP is not configured
+        flash('If that email exists, a reset link has been sent. Check your inbox.', 'info')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/forgot_password.html', form=form, title='Forgot Password')
+
+
+@auth.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main.feed'))
+    from datetime import datetime
+    user = User.query.filter_by(reset_token=token).first()
+    if not user or not user.reset_token_expiry or user.reset_token_expiry < datetime.utcnow():
+        flash('Invalid or expired reset link.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        flash('Password has been reset! You can now log in.', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password.html', form=form, title='Reset Password')

@@ -70,15 +70,11 @@
 
             <!-- Upload from computer -->
             <div class="mb-3">
-              <label class="form-label fw-semibold">Upload Profile Picture</label>
+              <label class="form-label fw-semibold">Profile Picture</label>
               {{ form.avatar_upload(class="form-control") }}
               <small class="text-muted">PNG, JPG, GIF, WebP – max 2MB</small>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label text-muted small">— or paste a URL —</label>
-              {{ render_field(form.avatar_url, 'Paste a link to your profile picture') }}
-            </div>
             <div class="d-grid">
               {{ form.submit(class="btn btn-mb-primary") }}
             </div>
