@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
+import os, uuid
 from app import db
 from app.models import User
 from app.forms import RegistrationForm, LoginForm, ProfileForm
@@ -60,7 +62,19 @@ def profile():
         current_user.bio = form.bio.data
         current_user.role_title = form.role_title.data or 'Developer'
         current_user.github_url = form.github_url.data
-        current_user.avatar_url = form.avatar_url.data
+
+        # Handle file upload
+        if form.avatar_upload.data:
+            file = form.avatar_upload.data
+            ext = file.filename.rsplit('.', 1)[-1].lower()
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_folder, exist_ok=True)
+            file.save(os.path.join(upload_folder, secure_filename(filename)))
+            current_user.avatar_url = url_for('static', filename=f'uploads/{filename}')
+        elif form.avatar_url.data:
+            current_user.avatar_url = form.avatar_url.data
+
         db.session.commit()
         flash('Profile updated!', 'success')
         return redirect(url_for('auth.profile'))
