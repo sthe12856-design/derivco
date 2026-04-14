@@ -61,17 +61,24 @@
           <h5 class="mb-0"><i class="bi bi-person-gear"></i> Edit Profile</h5>
         </div>
         <div class="card-body p-4">
-          <form method="POST">
+          <form method="POST" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             {{ render_field(form.username) }}
             {{ render_field(form.role_title, 'e.g. Full-Stack Developer, Backend Dev…') }}
             {{ render_field(form.bio, 'Tell the community about yourself…') }}
             {{ render_field(form.github_url, 'https://github.com/yourname') }}
-            {{ render_field(form.avatar_url, 'Paste a link to your profile picture') }}
-            <small class="text-muted d-block mb-3">
-              <i class="bi bi-info-circle"></i> Tip: use a link from GitHub, LinkedIn, or
-              <a href="https://ui-avatars.com" target="_blank">ui-avatars.com</a>
-            </small>
+
+            <!-- Upload from computer -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Upload Profile Picture</label>
+              {{ form.avatar_upload(class="form-control") }}
+              <small class="text-muted">PNG, JPG, GIF, WebP – max 2MB</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label text-muted small">— or paste a URL —</label>
+              {{ render_field(form.avatar_url, 'Paste a link to your profile picture') }}
+            </div>
             <div class="d-grid">
               {{ form.submit(class="btn btn-mb-primary") }}
             </div>

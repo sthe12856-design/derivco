@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Collaborate – {{ project.title }} – MzansiBuilds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-people-fill"></i> {{ project.title }} – Collaboration Panel</h3>
+      <p class="text-muted mb-0">
+        <span class="badge badge-{{ project.stage }} text-white">{{ project.stage.title() }}</span>
+        by <a href="{{ url_for('auth.developer', user_id=project.author.id) }}"
+              style="color:var(--mb-green)" class="fw-bold text-decoration-none">{{ project.author.username }}</a>
+      </p>
+    </div>
+    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="btn btn-mb-outline">
+      <i class="bi bi-arrow-left"></i> Back to Project
+    </a>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LEFT: Discussion -->
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header card-header-mb py-2">
+          <h6 class="mb-0"><i class="bi bi-chat-square-text"></i> Team Discussion</h6>
+        </div>
+        <div class="card-body" style="max-height: 500px; overflow-y: auto;" id="chat-box">
+          {% if messages %}
+            {% for msg in messages %}
+            <div class="d-flex mb-3 gap-3">
+              <div>
+                {% if msg.author.avatar_url %}
+                  <img src="{{ msg.author.avatar_url }}" class="rounded-circle"
+                       style="width:38px;height:38px;object-fit:cover;">
+                {% else %}
+                  <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                       style="width:38px;height:38px;background:var(--mb-green);color:#fff;font-size:1rem;">
+                    {{ msg.author.username[0].upper() }}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                  <span class="fw-bold" style="color:var(--mb-green)">{{ msg.author.username }}</span>
+                  <small class="text-muted">{{ msg.created_at.strftime('%d %b %Y %H:%M') }}</small>
+                </div>
+                <p class="mb-0 mt-1">{{ msg.body }}</p>
+              </div>
+            </div>
+            {% if not loop.last %}<hr class="my-2">{% endif %}
+            {% endfor %}
+          {% else %}
+            <p class="text-muted text-center py-4">
+              <i class="bi bi-chat-dots display-6"></i><br>
+              No messages yet. Start the collaboration discussion!
+            </p>
+          {% endif %}
+        </div>
+        <div class="card-footer">
+          <form action="{{ url_for('projects.collab_message', project_id=project.id) }}" method="POST">
+            {{ form.hidden_tag() }}
+            <div class="d-flex gap-2">
+              {{ form.body(class="form-control", placeholder="Type a message to the team…", rows=1) }}
+              <button type="submit" class="btn btn-mb-primary flex-shrink-0">
+                <i class="bi bi-send"></i> Send
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Team & Info -->
+    <div class="col-md-4">
+
+      <!-- Team Members -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header card-header-mb py-2">
+          <h6 class="mb-0"><i class="bi bi-person-check-fill"></i> Team Members</h6>
+        </div>
+        <div class="card-body">
+          <!-- Owner -->
+          <div class="d-flex align-items-center gap-2 mb-3">
+            {% if project.author.avatar_url %}
+              <img src="{{ project.author.avatar_url }}" class="rounded-circle"
+                   style="width:36px;height:36px;object-fit:cover;">
+            {% else %}
+              <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                   style="width:36px;height:36px;background:var(--mb-green);color:#fff;font-size:.9rem;">
+                {{ project.author.username[0].upper() }}
+              </div>
+            {% endif %}
+            <div>
+              <a href="{{ url_for('auth.developer', user_id=project.author.id) }}"
+                 class="fw-bold text-decoration-none" style="color:var(--mb-green)">{{ project.author.username }}</a>
+              <span class="badge bg-dark ms-1">Owner</span>
+            </div>
+          </div>
+
+          <!-- Collaborators -->
+          {% for collab in collaborators %}
+          <div class="d-flex align-items-center gap-2 mb-2">
+            {% if collab.avatar_url %}
+              <img src="{{ collab.avatar_url }}" class="rounded-circle"
+                   style="width:36px;height:36px;object-fit:cover;">
+            {% else %}
+              <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                   style="width:36px;height:36px;background:var(--mb-green);color:#fff;font-size:.9rem;">
+                {{ collab.username[0].upper() }}
+              </div>
+            {% endif %}
+            <div>
+              <a href="{{ url_for('auth.developer', user_id=collab.id) }}"
+                 class="fw-bold text-decoration-none" style="color:var(--mb-green)">{{ collab.username }}</a>
+              <span class="badge bg-success ms-1">Collaborator</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Project Info -->
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-bold"><i class="bi bi-info-circle"></i> Project Info</h6>
+          <p class="small text-muted mb-2">{{ project.description[:200] }}{% if project.description|length > 200 %}…{% endif %}</p>
+          {% if project.support_needed %}
+            <div class="alert alert-success py-2 small mb-2">
+              <i class="bi bi-hand-thumbs-up"></i> <strong>Help needed:</strong> {{ project.support_needed }}
+            </div>
+          {% endif %}
+          <small class="text-muted">
+            {{ project.milestones.count() }} milestone(s) &bull;
+            {{ project.comments.count() }} comment(s)
+          </small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto-scroll chat to bottom
+  const chatBox = document.getElementById('chat-box');
+  if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+</script>
+{% endblock %}

@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from datetime import datetime
 from app import db
-from app.models import Project, Milestone, HandRaise
-from app.forms import ProjectForm, MilestoneForm, CommentForm, HandRaiseForm
+from app.models import Project, Milestone, HandRaise, CollabMessage
+from app.forms import ProjectForm, MilestoneForm, CommentForm, HandRaiseForm, CollabMessageForm
 
 projects = Blueprint('projects', __name__)
 
@@ -43,6 +43,10 @@ def project_detail(project_id):
     if current_user.is_authenticated:
         user_raised = HandRaise.query.filter_by(
             user_id=current_user.id, project_id=project_id).first() is not None
+    accepted_collabs = HandRaise.query.filter_by(project_id=project_id, status='accepted').all()
+    user_is_collaborator = False
+    if current_user.is_authenticated:
+        user_is_collaborator = any(hr.user_id == current_user.id for hr in accepted_collabs) or current_user.id == project.user_id
     return render_template(
         'projects/detail.html',
         project=project,
@@ -53,6 +57,8 @@ def project_detail(project_id):
         comments=comments,
         hand_raises=hand_raises,
         user_raised=user_raised,
+        accepted_collabs=accepted_collabs,
+        user_is_collaborator=user_is_collaborator,
         title=project.title,
     )
 
@@ -162,3 +168,69 @@ def raise_hand(project_id):
         db.session.commit()
         flash('Hand raised! The developer will be notified.', 'success')
     return redirect(url_for('projects.project_detail', project_id=project_id))
+
+
+@projects.route('/hand-raise/<int:hand_raise_id>/accept', methods=['POST'])
+@login_required
+def accept_hand_raise(hand_raise_id):
+    hr = HandRaise.query.get_or_404(hand_raise_id)
+    if hr.project.user_id != current_user.id:
+        abort(403)
+    hr.status = 'accepted'
+    db.session.commit()
+    flash(f'{hr.requester.username} has been accepted as a collaborator!', 'success')
+    return redirect(url_for('projects.project_detail', project_id=hr.project_id))
+
+
+@projects.route('/hand-raise/<int:hand_raise_id>/decline', methods=['POST'])
+@login_required
+def decline_hand_raise(hand_raise_id):
+    hr = HandRaise.query.get_or_404(hand_raise_id)
+    if hr.project.user_id != current_user.id:
+        abort(403)
+    hr.status = 'declined'
+    db.session.commit()
+    flash(f'{hr.requester.username} has been declined.', 'info')
+    return redirect(url_for('projects.project_detail', project_id=hr.project_id))
+
+
+@projects.route('/project/<int:project_id>/collaborate')
+@login_required
+def collaborate(project_id):
+    project = Project.query.get_or_404(project_id)
+    # Only owner and accepted collaborators can view this panel
+    is_owner = current_user.id == project.user_id
+    is_collaborator = HandRaise.query.filter_by(
+        user_id=current_user.id, project_id=project_id, status='accepted').first() is not None
+    if not is_owner and not is_collaborator:
+        flash('You need to be an accepted collaborator to access this panel.', 'warning')
+        return redirect(url_for('projects.project_detail', project_id=project_id))
+
+    collaborators = [hr.requester for hr in
+                     HandRaise.query.filter_by(project_id=project_id, status='accepted').all()]
+    messages = project.collab_messages.order_by(CollabMessage.created_at.asc()).all()
+    form = CollabMessageForm()
+    return render_template('projects/collaborate.html', project=project,
+                           collaborators=collaborators, messages=messages,
+                           form=form, title=f'Collaborate – {project.title}')
+
+
+@projects.route('/project/<int:project_id>/collab-message', methods=['POST'])
+@login_required
+def collab_message(project_id):
+    project = Project.query.get_or_404(project_id)
+    is_owner = current_user.id == project.user_id
+    is_collaborator = HandRaise.query.filter_by(
+        user_id=current_user.id, project_id=project_id, status='accepted').first() is not None
+    if not is_owner and not is_collaborator:
+        abort(403)
+    form = CollabMessageForm()
+    if form.validate_on_submit():
+        msg = CollabMessage(
+            body=form.body.data,
+            user_id=current_user.id,
+            project_id=project_id,
+        )
+        db.session.add(msg)
+        db.session.commit()
+    return redirect(url_for('projects.collaborate', project_id=project_id))

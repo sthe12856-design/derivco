@@ -107,3 +107,20 @@ class HandRaise(db.Model):
 
     def __repr__(self):
         return f'<HandRaise {self.id}>'
+
+
+class CollabMessage(db.Model):
+    __tablename__ = 'collab_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+
+    author = db.relationship('User', backref='collab_messages')
+    project = db.relationship('Project', backref=db.backref('collab_messages', lazy='dynamic',
+                              cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<CollabMessage {self.id}>'

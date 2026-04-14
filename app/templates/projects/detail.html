@@ -173,9 +173,26 @@
                     <a href="{{ url_for('auth.developer', user_id=hr.requester.id) }}"
                        style="color:var(--mb-green)" class="fw-semibold text-decoration-none">{{ hr.requester.username }}</a>
                     {% if hr.message %}
-                      <p class="small text-muted mb-0">{{ hr.message }}</p>
+                      <p class="small text-muted mb-1">{{ hr.message }}</p>
                     {% endif %}
                     <small class="text-muted">{{ hr.created_at.strftime('%d %b %Y') }}</small>
+
+                    {% if hr.status == 'pending' %}
+                      <div class="d-flex gap-2 mt-2">
+                        <form action="{{ url_for('projects.accept_hand_raise', hand_raise_id=hr.id) }}" method="POST">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button class="btn btn-sm btn-mb-primary"><i class="bi bi-check-lg"></i> Accept</button>
+                        </form>
+                        <form action="{{ url_for('projects.decline_hand_raise', hand_raise_id=hr.id) }}" method="POST">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i> Decline</button>
+                        </form>
+                      </div>
+                    {% elif hr.status == 'accepted' %}
+                      <span class="badge bg-success mt-1"><i class="bi bi-check-circle"></i> Accepted</span>
+                    {% elif hr.status == 'declined' %}
+                      <span class="badge bg-secondary mt-1"><i class="bi bi-x-circle"></i> Declined</span>
+                    {% endif %}
                   </div>
                 {% endfor %}
               {% else %}
@@ -219,6 +236,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Collaboration Panel Link -->
+      {% if user_is_collaborator and accepted_collabs %}
+        <div class="card shadow-sm mt-4" style="border-top: 3px solid var(--mb-green);">
+          <div class="card-body text-center">
+            <h6 class="fw-bold"><i class="bi bi-people-fill"></i> Collaboration Team</h6>
+            <p class="small text-muted mb-2">{{ accepted_collabs|length }} collaborator(s) accepted</p>
+            <a href="{{ url_for('projects.collaborate', project_id=project.id) }}"
+               class="btn btn-mb-primary w-100">
+              <i class="bi bi-chat-square-text"></i> Open Collaboration Panel
+            </a>
+          </div>
+        </div>
+      {% endif %}
     </div>
 
   </div>

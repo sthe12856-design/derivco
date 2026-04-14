@@ -67,3 +67,8 @@ class CommentForm(FlaskForm):
 class HandRaiseForm(FlaskForm):
     message = TextAreaField('Message (optional)', validators=[Optional(), Length(max=300)])
     submit = SubmitField('Raise Hand 🤚')
+
+
+class CollabMessageForm(FlaskForm):
+    body = TextAreaField('Message', validators=[DataRequired(), Length(max=500)])
+    submit = SubmitField('Send')
